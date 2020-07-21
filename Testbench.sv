@@ -55,8 +55,10 @@ class reg_item extends uvm_sequence_item;
 endclass
 
 //***************************SEQUENCE*************************
+                                              //1) Writes and reads on different constrained address to check whether the latest value are updated or not
+                                            //2) Boundary check for RAM writing and reading from RAM size boundary addresses.
 
-// The generator class is replaced by a sequence
+
 class gen_item_seq extends uvm_sequence;
   `uvm_object_utils(gen_item_seq)
   function new(string name="gen_item_seq");
@@ -83,6 +85,8 @@ endclass
 
 
 //***********************SEQUENCE2****************************
+
+                                             //3)Writing walking ones,alternating ones and zeros in to the memory address and checking for design correctness.
 
 class wr_sequence extends uvm_sequence#(reg_item);
   
@@ -115,7 +119,7 @@ endclass
 
 //****************SEQUENCE3***********************
 
-// consecutive read followed by writes on same address
+                                                          //4) Consecutive read followed by writes on same address and write followed by read on same address
 
 class sequence_3 extends uvm_sequence#(reg_item);
   
