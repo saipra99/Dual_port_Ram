@@ -18,7 +18,7 @@ class reg_item extends uvm_sequence_item;
   rand bit [`DATA_WIDTH-1:0] 	wdataA;
   rand bit [`DATA_WIDTH-1:0] 	wdataB;
   
-  rand bit 						wr;
+  rand bit 	wr;
   bit [`DATA_WIDTH-1:0] 		rdataA; 
   bit [`DATA_WIDTH-1:0] 		rdataB;
 
