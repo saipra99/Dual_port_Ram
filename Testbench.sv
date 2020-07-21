@@ -1,3 +1,5 @@
+// Code your testbench here
+// or browse Examples
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
@@ -37,8 +39,11 @@ class reg_item extends uvm_sequence_item;
   
   
   constraint addressB {addrB inside {'h21, 'hCD ,'hCC ,'h8A ,'hFF};}
-                       
   
+  
+  constraint seq_3 { wr dist {0:=50,1:=50};}
+
+                                           
   
   virtual function string convert2str();
     return $sformatf("addrA=0x%0h addrB=0x%0h wr=0x%0h wdataA=0x%0h wrdataB=0x%0h rdataA 0x%0h rdataB 0x%0h", addrA,addrB, wr, wdataA,wdataB,rdataA,rdataB);
@@ -60,17 +65,91 @@ class gen_item_seq extends uvm_sequence;
   
   rand int num; 	// Config total number of items to be sent
   
-  constraint c1 { soft num inside {[2:5]}; }
+  constraint c1 {  num inside {[20:50]}; }
   
   virtual task body();
     reg_item m_item = reg_item::type_id::create("m_item");
+    m_item.seq_3.constraint_mode(0);
     for (int i = 0; i < num; i ++) begin
     	start_item(m_item);
-    	m_item.randomize();
+      m_item.randomize();
       `uvm_info("SEQ", $sformatf("Generate new item: %s", m_item.convert2str()), UVM_LOW)
       	finish_item(m_item);
     end
     `uvm_info("SEQ", $sformatf("Done generation of %0d items", num), UVM_LOW)
+  endtask
+endclass
+
+
+
+//***********************SEQUENCE2****************************
+
+class wr_sequence extends uvm_sequence#(reg_item);
+  
+  `uvm_object_utils(wr_sequence)
+  
+  function new(string name="wr_sequence");
+    super.new(name);
+  endfunction
+  
+  //int n=2;
+  
+  virtual task body();
+    
+    reg_item wr_item=reg_item::type_id::create("wr_item");
+    wr_item.seq_3.constraint_mode(0);
+    
+    for(int i=0;i<7;i=i+1)
+      
+      begin
+        
+      start_item(wr_item);
+      
+        wr_item.randomize() with {wdataA=='hF0F0; wdataB=='hF0F0; wr==1; };
+      
+      finish_item(wr_item);
+    end
+`uvm_info(get_type_name(),$sformatf("Walking ones and zeros successful"),UVM_LOW)
+  endtask
+endclass
+
+//****************SEQUENCE3***********************
+
+// consecutive read followed by writes on same address
+
+class sequence_3 extends uvm_sequence#(reg_item);
+  
+  `uvm_object_utils(sequence_3)
+  
+  function new(string name="sequence_3");
+    super.new(name);
+  endfunction
+  
+  //int num;
+
+  
+  //constraint seq_3{seq_item.wr dist {1:=50,0:=50}; }
+  
+  
+  virtual task body();
+    
+    reg_item seq_item=reg_item::type_id::create("seq_item");
+    seq_item.seq_3.constraint_mode(1);
+    
+    `uvm_info(get_type_name(),$sformatf("Starting consecutive write on same address"),UVM_LOW)
+
+    
+    for(int i=0;i<4;i=i+1)
+      begin
+        
+       start_item(seq_item);
+        
+       seq_item.randomize() with {addrA=='h76; addrB=='hCC;};
+        
+       finish_item(seq_item);
+        
+      end
+    `uvm_info(get_type_name(),$sformatf("Consecutive write successful"),UVM_LOW)
   endtask
 endclass
 
@@ -105,7 +184,7 @@ class driver extends uvm_driver #(reg_item);
   
   virtual task drive_item(reg_item m_item);
       vif.sel <= 1;
-      vif.addrA 	<= m_item.addrA;
+      vif.addrA <= m_item.addrA;
       vif.addrB	<= m_item.addrB;
       vif.wr 	<= m_item.wr;
       vif.wdataA <= m_item.wdataA;
@@ -197,15 +276,22 @@ class scoreboard extends uvm_scoreboard;
             `uvm_info(get_type_name(),$sformatf("Store addrA 0x%0h addrB 0x%0h wrdataA 0x%0h wrdataB  0x%0h ", item.addrA,item.addrB,item.wdataA, item.wdataB),UVM_LOW)
         
           end
+     
+        
+        /*else if(item.addrA==item.addrB)
+          begin
+              `uvm_info(get_type_name(),$sformatf("Prioritizing address pointed by A port addrA 0x%0h addrB 0x%0h wrdataA 0x%0h wrdataB 0x%0h", item.addrA,item.addrB,item.wdataA, item.wdataB),UVM_LOW)
+          end*/
+        
         else
           begin
             refq[item.addrA]=item;
             refq[item.addrB]=item;
             
-            `uvm_info(get_type_name(),$sformatf("Updating value addrA 0x%0h addrB 0x%0h wrdataA 0x%0h wrdataB  0x%0h ", item.addrA,item.addrB,item.wdataA, item.wdataB),UVM_LOW)
+               `uvm_info(get_type_name(),$sformatf("Updating value addrA 0x%0h addrB 0x%0h wrdataA 0x%0h wrdataB  0x%0h ", item.addrA,item.addrB,item.wdataA, item.wdataB),UVM_LOW)
           end
-        
       end
+    
 
     if(!item.wr)
        begin
@@ -397,12 +483,26 @@ class test extends uvm_test;
   endfunction
   
   virtual task run_phase(uvm_phase phase);
+    
     gen_item_seq seq = gen_item_seq::type_id::create("seq");
+    wr_sequence wr_seq=wr_sequence::type_id::create("wr_seq");
+    sequence_3  cs_wr=sequence_3::type_id::create("cs_wr");
+    
     phase.raise_objection(this);
     apply_reset();
     
     void'(  seq.randomize() with {num inside {[20:40]}; });
+    fork
+      
+    wr_seq.start(e0.a0.s0);
     seq.start(e0.a0.s0);
+  
+      
+    join
+    
+    
+    cs_wr.start(e0.a0.s0);
+    
     #200;
       
     phase.drop_objection(this);
