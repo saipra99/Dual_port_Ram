@@ -5,20 +5,20 @@ module dual_port
      parameter DEPTH 		= 256,
      parameter RESET_VAL  	= 16'h2567
   )
-  ( input 					clk,
-  	input 					rstn,
-   input [ADDR_WIDTH-1:0] 	addrA,
+  ( input 	clk,
+     input 	rstn,
+   input [ADDR_WIDTH-1:0]   addrA,
    input [ADDR_WIDTH-1:0]   addrB,
-    input 					sel,
-  	input 					wr,
-    input [DATA_WIDTH-1:0] 	wdataA,
-    input[DATA_WIDTH-1:0]    wdataB,
-    output reg [DATA_WIDTH-1:0] rdataA,
+   input sel,
+   input wr,
+   input [DATA_WIDTH-1:0] wdataA,
+   input[DATA_WIDTH-1:0]  wdataB,
+   output reg [DATA_WIDTH-1:0] rdataA,
    output reg[DATA_WIDTH-1:0] rdataB,
-    output reg				ready);
+   output reg	ready);
   
-  	// Some memory element to store data for each addr
-    reg [DATA_WIDTH-1:0] ctrl [DEPTH];
+  	// memory element to store data for each addr
+   reg [DATA_WIDTH-1:0] ctrl [DEPTH];
   
   reg  ready_dly;
   wire ready_pe;
