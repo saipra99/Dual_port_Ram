@@ -35,10 +35,10 @@ class reg_item extends uvm_sequence_item;
   `uvm_object_utils_end
   
   
-  constraint addressA {addrA inside { 'h76 ,'h12, 'h30,'hEE,'h00};}
+  constraint addressA {addrA inside { 'h76 ,'h12, 'h30, 'h34,'hEE,'h00};}
   
   
-  constraint addressB {addrB inside {'h21, 'hCD ,'hCC ,'h8A ,'hFF};}
+  constraint addressB {addrB inside {'h21, 'hCD ,'hCC ,'h8A , 'h32,'hFF};}
   
   
   constraint seq_3 { wr dist {0:=50,1:=50};}
