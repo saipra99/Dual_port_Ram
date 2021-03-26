@@ -1,5 +1,4 @@
-// Code your testbench here
-// or browse Examples
+
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
@@ -35,10 +34,10 @@ class reg_item extends uvm_sequence_item;
   `uvm_object_utils_end
   
   
-  constraint addressA {addrA inside { 'h76 ,'h12, 'h30, 'h34,'hEE,'h00};}
+  constraint addressA {addrA inside { 'h76 ,'h12, 'h30, 'h34,'hEE,'h00,'h72};}
   
   
-  constraint addressB {addrB inside {'h21, 'hCD ,'hCC ,'h8A , 'h32,'hFF};}
+  constraint addressB {addrB inside {'h21, 'hCD ,'hCC ,'h8A , 'h32,'hFF,'h54};}
   
   
   constraint seq_3 { wr dist {0:=50,1:=50};}
@@ -382,39 +381,39 @@ endclass
    
   
  reg_item t;
+   
+ real cov;
   
   covergroup cg_addr;
     option.per_instance=1;
     
-    all_of_A: coverpoint t.addrA 
+    ADDRESS_A:  coverpoint t.addrA 
                {
-                 bins addressA[] = {'h76 ,'h12, 'h30,'hEE,'h00};
+                 bins addressA[] = {'h76 ,'h12, 'h30,'hEE,'h00,'h72};
                }
-    all_of_B : coverpoint t.addrB
+    ADDRESS_B: coverpoint t.addrB
                 {
-                  bins addressB[] = {'h21, 'hCD ,'hCC ,'h8A ,'hFF};
-                  
+                  bins addressB[] = {'h21, 'hCD ,'hCC ,'h8A ,'hFF,'h54}; 
                 }
-     cross_a_b : cross all_of_A,all_of_B;
+    READ_WRITE: coverpoint t.wr
+                {
+                  bins read_write[]={0,1};
+                }
+   WRITE_DATAa: coverpoint t.wdataA{option.auto_bin_max=64;}
+               
+   WRITE_DATAb: coverpoint t.wdataB{option.auto_bin_max=32;}
+        
+   ADDAxADDB:   cross ADDRESS_A,ADDRESS_B;
+    
+   ADDAxADDBxRD: cross ADDRESS_A,ADDRESS_B,READ_WRITE;
     
   endgroup
    
-   covergroup rd_wr;
-      option.per_instance=1;
-     
-     read: coverpoint t.wr
-     {
-       bins zero ={0};
-        bins one ={1};
-     }
-     
-   endgroup
        
  
    function new(string name= "my_coverage",uvm_component p=null);
     super.new(name,p);
     cg_addr=new();
-     rd_wr=new();
   endfunction
   
   
@@ -422,14 +421,20 @@ endclass
    virtual function void write(reg_item t);
      this.t=t;
      cg_addr.sample();
-     rd_wr.sample();
-     `uvm_info("COV",$sformatf("COVERAGE ACHEIVED :  	%3.2f%%",cg_addr.get_inst_coverage()),UVM_LOW) 
-     
-     `uvm_info("COV" ,$sformatf(" COVERAGE RD-WR : %3.2f%%",rd_wr.get_inst_coverage()),UVM_LOW) 
   endfunction 
+   
+   function void extract_phase(uvm_phase phase);
+     super.extract_phase(phase);
+     cov= cg_addr.get_inst_coverage();
+   endfunction
+   
+   function void report_phase(uvm_phase phase);
+     super.report_phase(phase);
+     `uvm_info(get_type_name(),$sformatf("Coverage is: %0.2f",cov),UVM_LOW)
+   endfunction
+   
     
-endclass  
-    
+endclass   
                
 //What if it writes/reads on/from two same Address
             
@@ -495,7 +500,7 @@ class test extends uvm_test;
     phase.raise_objection(this);
     apply_reset();
     
-    void'(  seq.randomize() with {num inside {[20:40]}; });
+    void'(  seq.randomize() with {num inside {[40:60]}; });
     fork
       
     wr_seq.start(e0.a0.s0);
@@ -542,11 +547,11 @@ module tb;
   always #10 clk =~ clk;
   reg_if _if (clk);
   
-  dual_port u0 ( .clk (clk),
+  dual_port u0 (.clk (clk),
                .addrA (_if.addrA),
                .addrB(_if.addrB),
-              .rstn(_if.rstn),
-            .sel  (_if.sel),
+               .rstn(_if.rstn),
+               .sel  (_if.sel),
                .wr (_if.wr),
                .wdataA (_if.wdataA),
                .wdataB(_if.wdataB),
