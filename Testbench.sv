@@ -23,7 +23,7 @@ class reg_item extends uvm_sequence_item;
   bit [`DATA_WIDTH-1:0] 		rdataB;
   
 
-  // Use utility macros to implement standard functions
+  // Use automation macros to implement standard functions
   // like print, copy, clone, etc
   `uvm_object_utils_begin(reg_item)
   `uvm_field_int (addrA, UVM_DEFAULT)
