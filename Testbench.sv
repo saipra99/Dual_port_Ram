@@ -17,9 +17,11 @@ class reg_item extends uvm_sequence_item;
   rand bit [`DATA_WIDTH-1:0] 	wdataA;
   rand bit [`DATA_WIDTH-1:0] 	wdataB;
   
+  rand bit[`DATA_WIDTH-1:0] wr_data;
   rand bit 	wr;
   bit [`DATA_WIDTH-1:0] 		rdataA; 
   bit [`DATA_WIDTH-1:0] 		rdataB;
+  
 
   // Use utility macros to implement standard functions
   // like print, copy, clone, etc
@@ -34,6 +36,8 @@ class reg_item extends uvm_sequence_item;
   `uvm_object_utils_end
   
   
+  constraint PATTERN{ foreach(wr_data[i]){if(i) wr_data[i] == wr_data[i-1] <<1; else wr_data[i] ==`DATA_WIDTH'b1;}}
+    
   constraint addressA {addrA inside { 'h76 ,'h12, 'h30, 'h34,'hEE,'h00,'h72};}
   
   
@@ -169,15 +173,14 @@ class walking_ones_seq extends uvm_sequence#(write_xtn);
   task body();
     req = REQ::type_id::create("req");
     
-    req.addrA.constraint_mode(0);
-    req.dataA.constraint_mode(0);
+    req.addressA.constraint_mode(0);
     
     `uvm_info(get_type_name(),"About to start walking one's pattern",UVM_LOW)
     
     for(int i=0;i<`DEPTH;i=i+1)
       begin
         start_item(req);
-        assert(req.randomize() with {write==1;addr==i;data==w_data[i % 8];});
+        assert(req.randomize() with {wr==1;addrA==i;wdataA==wr_data[i % 8];});
         finish_item(req);  
       end
     
@@ -199,15 +202,14 @@ class walking_zeroes_seq extends uvm_sequence#(write_xtn);
     
     req = REQ::type_id::create("req");
     
-    req.addrA.constraint_mode(0);
-    req.dataA.constraint_mode(0);
+    req.addressB.constraint_mode(0);
     
     `uvm_info(get_type_name(),"About to start walking zeroes pattern",UVM_LOW)
     
     for(int j=0;j<`DEPTH;j++)
       begin
         start_item(req);
-        assert(req.randomize() with { write==1;addr=i;data == ~(w_data[i%8]);});
+        assert(req.randomize() with { wr==1;addrB=j; wdataA == ~(wr_data[j%8]);});
         finish_item(req);
       end
   endtask
