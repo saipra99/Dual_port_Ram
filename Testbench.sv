@@ -156,6 +156,63 @@ class sequence_3 extends uvm_sequence#(reg_item);
   endtask
 endclass
 
+//***********************SEQUENCE4**************************
+
+class walking_ones_seq extends uvm_sequence#(write_xtn);
+  
+  `uvm_object_utils(walking_ones_seq)
+  
+  function new(string name="walking_ones_seq");
+    super.new(name);
+  endfunction
+  
+  task body();
+    req = REQ::type_id::create("req");
+    
+    req.addrA.constraint_mode(0);
+    req.dataA.constraint_mode(0);
+    
+    `uvm_info(get_type_name(),"About to start walking one's pattern",UVM_LOW)
+    
+    for(int i=0;i<`DEPTH;i=i+1)
+      begin
+        start_item(req);
+        assert(req.randomize() with {write==1;addr==i;data==w_data[i % 8];});
+        finish_item(req);  
+      end
+    
+  endtask
+   
+endclass
+
+//***********************SEQUENCE5*********************
+
+class walking_zeroes_seq extends uvm_sequence#(write_xtn);
+  
+  `uvm_object_utils(walking_zeroes_seq)
+  
+  function new(string name="walking_zeroes_seq");
+    super.new(name);
+  endfunction
+  
+  task body();
+    
+    req = REQ::type_id::create("req");
+    
+    req.addrA.constraint_mode(0);
+    req.dataA.constraint_mode(0);
+    
+    `uvm_info(get_type_name(),"About to start walking zeroes pattern",UVM_LOW)
+    
+    for(int j=0;j<`DEPTH;j++)
+      begin
+        start_item(req);
+        assert(req.randomize() with { write==1;addr=i;data == ~(w_data[i%8]);});
+        finish_item(req);
+      end
+  endtask
+   
+endclass
 
 
 //*************************DRIVER******************************
